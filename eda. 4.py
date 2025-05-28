@@ -58,3 +58,24 @@ correlation_matrix = df[['Temperature (°C)', 'Rainfall (mm)', 'Sunshine', 'Humi
 sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
 plt.title('Correlation Heatmap (Before PCA)')
 plt.show()
+
+# Box plots for environmental features (Sunshine and Humidity) across Outbreak classes
+plt.figure(figsize=(10, 5))
+
+# Subplot 1: Sunshine
+plt.subplot(1, 2, 1)
+sns.boxplot(x='Outbreak', y='Sunshine', data=df, palette='Set2')
+plt.title('Sunshine Distribution by Outbreak')
+plt.xlabel('Outbreak Status')
+plt.ylabel('Sunshine (hours)')
+
+# Subplot 2: Humidity
+plt.subplot(1, 2, 2)
+sns.boxplot(x='Outbreak', y='Humidity (%)', data=df, palette='Set2')
+plt.title('Humidity Distribution by Outbreak')
+plt.xlabel('Outbreak Status')
+plt.ylabel('Humidity (%)')
+
+plt.tight_layout()
+plt.savefig('Figure_4_Environmental_Distributions.png')
+plt.show()
