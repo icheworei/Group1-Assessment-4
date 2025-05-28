@@ -1,0 +1,47 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, make_scorer, recall_score
+from imblearn.over_sampling import SMOTE
+
+# Load preprocessed data
+X_pca = pd.read_csv("preprocessed_data_pca.csv").values
+
+# Load original data to get y
+df = pd.read_excel("AvianData.xlsx")
+df['Outbreak'] = df['Colisepticaemia Cases'].apply(lambda x: 'Yes' if x >= 2 else 'No')
+y = df['Outbreak']
+
+# Split data with stratification
+X_train, X_test, y_train, y_test = train_test_split(X_pca, y, test_size=0.2, stratify=y, random_state=42)
+
+# Apply SMOTE to the training set
+smote = SMOTE(random_state=42)
+X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
+
+# Logistic Regression with hyperparameter tuning
+lr = LogisticRegression()
+param_grid_lr = {'C': [0.01, 0.1, 1, 10, 100], 'solver': ['liblinear', 'lbfgs']}
+grid_search_lr = GridSearchCV(lr, param_grid_lr, cv=5, scoring='f1_weighted')
+grid_search_lr.fit(X_train_res, y_train_res)
+print("Best Logistic Regression Parameters:", grid_search_lr.best_params_)
+print("Logistic Regression Report:")
+print(classification_report(y_test, grid_search_lr.predict(X_test)))
+
+# Random Forest with hyperparameter tuning
+rf = RandomForestClassifier()
+param_grid_rf = {'max_depth': [3, 5, 7, 10, None], 'n_estimators': [50, 100, 200]}
+grid_search_rf = GridSearchCV(rf, param_grid_rf, cv=5, scoring='f1_weighted')
+grid_search_rf.fit(X_train_res, y_train_res)
+print("Best Random Forest Parameters:", grid_search_rf.best_params_)
+print("Random Forest Report:")
+print(classification_report(y_test, grid_search_rf.predict(X_test)))
+
+# Cross-validation on the entire dataset for Random Forest (best model)
+rf_final = RandomForestClassifier(max_depth=10, n_estimators=50)
+recall_scorer = make_scorer(recall_score, pos_label='Yes')
+cv_scores = cross_val_score(rf_final, X_pca, y, cv=5, scoring=recall_scorer)
+print("Cross-Validation Recall for Yes (Random Forest):", cv_scores.mean())
+print("Cross-Validation Recall Std Dev:", cv_scores.std())
